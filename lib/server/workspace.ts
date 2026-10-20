@@ -1,0 +1,7 @@
+import {getDb} from '../../db';
+import {workspaces} from '../../db/schema';
+import {eq,and} from 'drizzle-orm';
+import {initialWorkspace,workspaceSchema,validateRelations,type Workspace,type Log} from '../model';
+import {AppError} from './runtime';
+export async function readWorkspace(owner:string){const db=getDb();await db.insert(workspaces).values({owner,payload:JSON.stringify({state:initialWorkspace,logs:[]}),revision:0,updatedAt:new Date().toISOString()}).onConflictDoNothing();const [row]=await db.select().from(workspaces).where(eq(workspaces.owner,owner));const d=JSON.parse(row.payload);return {state:workspaceSchema.parse(d.state),logs:d.logs as Log[],revision:row.revision};}
+export async function commitWorkspace(owner:string,revision:number,state:Workspace,action:string){state=workspaceSchema.parse(state);validateRelations(state);const current=await readWorkspace(owner);if(current.revision!==revision)throw new AppError('Votre espace a changé. Rechargez avant de continuer.',409);const logs=[{id:crypto.randomUUID(),time:new Date().toISOString(),action},...current.logs].slice(0,500);const rows=await getDb().update(workspaces).set({payload:JSON.stringify({state,logs}),revision:revision+1,updatedAt:new Date().toISOString()}).where(and(eq(workspaces.owner,owner),eq(workspaces.revision,revision))).returning({revision:workspaces.revision});if(!rows.length)throw new AppError('Modification concurrente. Rechargez votre espace.',409);return {state,logs,revision:revision+1};}

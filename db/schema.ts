@@ -1,0 +1,10 @@
+import {pgSchema,text,integer,uuid,bigint} from 'drizzle-orm/pg-core';
+const marketmate=pgSchema('marketmate');
+const pgTable=marketmate.table;
+export const workspaces=pgTable('workspaces',{owner:uuid('owner').primaryKey(),revision:integer('revision').notNull().default(0),payload:text('payload').notNull(),updatedAt:text('updated_at').notNull()});
+export const integrations=pgTable('integrations',{id:text('id').primaryKey(),owner:uuid('owner').notNull(),provider:text('provider').notNull(),ciphertext:text('ciphertext').notNull(),metadata:text('metadata').notNull(),updatedAt:text('updated_at').notNull()});
+export const oauthStates=pgTable('oauth_states',{nonce:text('nonce').primaryKey(),owner:uuid('owner').notNull(),provider:text('provider').notNull(),target:text('target').notNull(),expiresAt:bigint('expires_at',{mode:'number'}).notNull()});
+export const operations=pgTable('operations',{id:text('id').primaryKey(),owner:uuid('owner').notNull(),kind:text('kind').notNull(),status:text('status').notNull(),result:text('result'),createdAt:text('created_at').notNull()});
+export const assets=pgTable('assets',{id:text('id').primaryKey(),owner:uuid('owner').notNull(),objectKey:text('object_key').notNull(),mime:text('mime').notNull(),bytes:integer('bytes').notNull(),createdAt:text('created_at').notNull()});
+export const dailyUsage=pgTable('daily_usage',{id:text('id').primaryKey(),owner:uuid('owner').notNull(),count:integer('count').notNull().default(0)});
+export const socialPublications=pgTable('social_publications',{id:text('id').primaryKey(),owner:uuid('owner').notNull(),creativeId:text('creative_id').notNull(),instagramId:text('instagram_id').notNull(),caption:text('caption').notNull(),imageUrl:text('image_url').notNull(),containerId:text('container_id'),mediaId:text('media_id'),status:text('status').notNull(),createdAt:text('created_at').notNull()});

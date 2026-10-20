@@ -1,0 +1,11 @@
+query MarketMateCatalog($after: String) {
+ shop { name currencyCode }
+ products(first: 25, after: $after, query: "status:active") {
+  nodes {
+   id title description
+   featuredMedia { preview { image { url } } }
+   priceRangeV2 { minVariantPrice { amount currencyCode } }
+  }
+  pageInfo { hasNextPage endCursor }
+ }
+}

@@ -1,0 +1,7 @@
+import {requirePilotUser} from '../../../lib/server/pilot';
+import {getChatGPTUser} from '../../chatgpt-auth';
+import {getDb} from '../../../db';
+import {integrations,operations} from '../../../db/schema';
+import {eq,desc} from 'drizzle-orm';
+import {setting,json,baseUrl,errorResponse,AppError} from '../../../lib/server/runtime';
+export async function GET(){try{const user=await requirePilotUser();if(!user)throw new AppError('Connexion requise.',401);const rows=await getDb().select({provider:integrations.provider,metadata:integrations.metadata,updatedAt:integrations.updatedAt}).from(integrations).where(eq(integrations.owner,user.userId));const recent=await getDb().select({id:operations.id,kind:operations.kind,status:operations.status,createdAt:operations.createdAt}).from(operations).where(eq(operations.owner,user.userId)).orderBy(desc(operations.createdAt)).limit(15);const config=(names:string[])=>({ready:names.every(n=>!!setting(n)),missing:names.filter(n=>!setting(n))});return json({pilotShop:setting('PILOT_SHOP_DOMAIN'),connections:rows.map(x=>({...x,metadata:JSON.parse(x.metadata)})),configuration:{shopify:config(['SHOPIFY_CLIENT_ID','SHOPIFY_CLIENT_SECRET','TOKEN_ENCRYPTION_KEY','APP_BASE_URL']),ai:config(['OPENAI_API_KEY','OPENAI_TEXT_MODEL','OPENAI_IMAGE_MODEL']),meta:config(['META_APP_ID','META_APP_SECRET','META_GRAPH_VERSION','TOKEN_ENCRYPTION_KEY','APP_BASE_URL'])},callbacks:{shopify:baseUrl()+'/api/connect/shopify/callback',meta:baseUrl()+'/api/connect/meta/callback'},operations:recent});}catch(e){return errorResponse(e);}}

@@ -1,0 +1,5 @@
+import {getIntegration} from './vault';
+import {required,providerJSON,AppError} from './runtime';
+import {hmac} from '../security';
+export function graphVersion(){const version=required('META_GRAPH_VERSION');if(!/^v[0-9]+\.[0-9]+$/.test(version))throw new AppError('Version de l’API Meta invalide.',503);return version;}
+export async function meta(owner:string,path:string,params:Record<string,string>={},method='GET'){if(!/^\/?[a-zA-Z0-9_/-]+$/.test(path))throw new AppError('Ressource Meta invalide.');const {token}=await getIntegration(owner,'meta');if(Number(token.expiresAt)<Date.now())throw new AppError('Reconnectez Meta : l’autorisation a expiré.',401);const payload=new URLSearchParams({...params,appsecret_proof:await hmac(required('META_APP_SECRET'),token.access_token)});const url=`https://graph.facebook.com/${graphVersion()}/${path.replace(/^\//,'')}`;return providerJSON(method==='GET'?url+'?'+payload:url,{method,headers:{Authorization:'Bearer '+token.access_token,...(method==='POST'?{'Content-Type':'application/x-www-form-urlencoded'}:{})},...(method==='POST'?{body:payload}:{})});}
